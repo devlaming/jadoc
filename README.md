@@ -49,21 +49,22 @@ git pull
 ```
 If `jadoc` is up to date, you will see 
 ```
-Already up-to-date.
+Already up to date.
 ```
 otherwise, you will see `git` output similar to 
 ```
-remote: Enumerating objects: 5, done.
-remote: Counting objects: 100% (5/5), done.
-remote: Compressing objects: 100% (1/1), done.
-remote: Total 3 (delta 2), reused 3 (delta 2), pack-reused 0
-Unpacking objects: 100% (3/3), 304 bytes | 13.00 KiB/s, done.
-From https://github.com/devlaming/mgreml
-   5b4ca9a..b18a8cc  master     -> origin/master
-Updating 5b4ca9a..b18a8cc
+remote: Enumerating objects: 4, done.
+remote: Counting objects: 100% (4/4), done.
+remote: Compressing objects: 100% (3/3), done.
+remote: Total 3 (delta 0), reused 3 (delta 0), pack-reused 0
+Unpacking objects: 100% (3/3), 1.96 KiB | 111.00 KiB/s, done.
+From https://github.com/devlaming/jadoc
+   9c7474e..2b07455  main       -> origin/main
+Updating 9c7474e..2b07455
 Fast-forward
- README.md | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ README.md | 107 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 107 insertions(+)
+ create mode 100644 README.md
  ```
 which tells you which files were changed.
 
