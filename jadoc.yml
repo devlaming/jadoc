@@ -1,0 +1,9 @@
+name: jadoc
+dependencies:
+  - python=3.*
+  - pip
+  - pip:
+    - numpy
+    - scipy
+    - numba
+
