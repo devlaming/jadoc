@@ -6,7 +6,7 @@
 
 :warning: Before downloading `jadoc`, please make sure [Git](https://git-scm.com/downloads) and [Anaconda](https://www.anaconda.com/) with **Python 3.x** are installed.
 
-In order to download `jadoc`, open a command-line interface by starting [Anaconda Prompt](https://docs.anaconda.com/anaconda/user-guide/getting-started/), navigate to your working directory, and clone the `mgreml` repository using the following command:
+In order to download `jadoc`, open a command-line interface by starting [Anaconda Prompt](https://docs.anaconda.com/anaconda/user-guide/getting-started/), navigate to your working directory, and clone the `jadoc` repository using the following command:
 
 ```  
 git clone https://github.com/devlaming/jadoc.git
@@ -18,14 +18,14 @@ Now, enter the newly created `jadoc` directory using:
 cd jadoc
 ```
 
-Then run the following commands to create a custom Python environment which has all of `mgreml`'s dependencies (i.e. an environment that has packages such as `numpy` and `scipy` pre-installed):
+Then run the following commands to create a custom Python environment which has all of `jadoc`'s dependencies (i.e. an environment that has packages such as `numpy` and `scipy` pre-installed):
 
 ```
 conda env create --file jadoc.yml
 conda activate jadoc
 ```
 
-(or `activate mgreml` instead of `conda activate mgreml` on some machines).
+(or `activate jadoc` instead of `conda activate jadoc` on some machines).
 
 In case you cannot create a customised conda environment (e.g. because of insufficient user rights) or simply prefer to use Anaconda Navigator or `pip` to install packages e.g. in your base environment rather than a custom environment, please note that `jadoc` only requires Python 3.x with the packages `numpy`, `scipy`, and `numba` installed.
 
