@@ -18,7 +18,7 @@ Now, enter the newly created `jadoc` directory using:
 cd jadoc
 ```
 
-Then run the following commands to create a custom Python environment which has all of `mgreml`'s dependencies (i.e. an environment that has packages such as `numpy` and `pandas` pre-installed):
+Then run the following commands to create a custom Python environment which has all of `mgreml`'s dependencies (i.e. an environment that has packages such as `numpy` and `scipy` pre-installed):
 
 ```
 conda env create --file jadoc.yml
@@ -27,7 +27,7 @@ conda activate jadoc
 
 (or `activate mgreml` instead of `conda activate mgreml` on some machines).
 
-In case you cannot create a customised conda environment (e.g. because of insufficient user rights) or simply prefer to use Anaconda Navigator or `pip` to install packages e.g. in your base environment rather than a custom environment, please note that `jadoc` only requires Python 3.x with the packages `numpy`, `pandas`, and `numba` installed.
+In case you cannot create a customised conda environment (e.g. because of insufficient user rights) or simply prefer to use Anaconda Navigator or `pip` to install packages e.g. in your base environment rather than a custom environment, please note that `jadoc` only requires Python 3.x with the packages `numpy`, `scipy`, and `numba` installed.
 
 Once the above has completed, you can now run the following commands sequently, to test if `jadoc` is functioning properly:
 
