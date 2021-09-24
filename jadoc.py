@@ -45,7 +45,7 @@ def PerformJADOC(mC,iIter=100,dTol=1E-4,iS=None):
                          +" of input matrices (iN)")
     else: print("Computing low-dimensional decomposition of input matrices")
     mB=np.eye(iN)
-    mBA=np.empty((iC,iN,iS))
+    mA=np.empty((iC,iN,iS))
     dLambda=1
     for i in range(iC):
         if iS<iN:
@@ -53,32 +53,32 @@ def PerformJADOC(mC,iIter=100,dTol=1E-4,iS=None):
         else: (vD,mP)=np.linalg.eigh(mC[i])
         vD[vD<0]=0
         dLambda+=((np.trace(mC[i])-vD.sum())/(iN*iC))
-        mBA[i]=mP*(np.sqrt(vD)[None,:])
+        mA[i]=mP*(np.sqrt(vD)[None,:])
     print("Regularisation coefficient = "+str(dLambda))
     (mP,vD,mC)=(None,None,None)
     print("Starting quasi-Newton algorithm with golden-section steps")
     for t in range(iIter):
-        (dLoss,mDiags,dRMSG,mU)=ComputeLoss(mBA,dLambda)
+        (dLoss,mDiags,dRMSG,mU)=ComputeLoss(mA,dLambda)
         vEigsRhoDiags=np.linalg.eigvalsh(np.corrcoef(mDiags))
         if dRMSG<dTol and t>=iMinIter:
             break
-        dStepSize=PerformGoldenSection(mBA,mU,mB,dLambda,dTheta)
+        dStepSize=PerformGoldenSection(mA,mU,mB,dLambda,dTheta)
         print("ITER "+str(t)+": L="+str(dLoss)+"; RMSE(g)=" \
               +str(dRMSG)+"; kappa(diags)=" \
                   +str(max(vEigsRhoDiags)/min(vEigsRhoDiags)) \
                       +"; step="+str(dStepSize))
-        (mB,mBA)=UpdateEstimates(mB,dStepSize,mU,mBA,iC)
+        (mB,mA)=UpdateEstimates(mA,mU,mB,dStepSize,iC)
     return mB
 
-def ComputeLoss(mBA,dLambda,bLossOnly=False):
+def ComputeLoss(mA,dLambda,bLossOnly=False):
     dMinH=0.05
-    mDiags=(np.power(mBA,2).sum(axis=2))+dLambda
-    (iC,iN,iS)=mBA.shape
+    mDiags=(np.power(mA,2).sum(axis=2))+dLambda
+    (iC,iN,iS)=mA.shape
     dLoss=0.5*(np.log(mDiags).sum())/iC
     if bLossOnly:
         return dLoss
     else:
-        mG=ComputeGradient(mBA,mDiags,iC,iN,iS)
+        mG=ComputeGradient(mA,mDiags,iC,iN,iS)
         dRMSG=np.sqrt((np.power(mG,2).sum())/(iN*(iN-1)))
         mH=(mDiags[:,:,None]/mDiags[:,None,:]).mean(axis=0)
         mH=mH+mH.T-2.0
@@ -87,58 +87,58 @@ def ComputeLoss(mBA,dLambda,bLossOnly=False):
         return dLoss,mDiags,dRMSG,mU
 
 @njit
-def ComputeGradient(mBA,mDiags,iC,iN,iS):
+def ComputeGradient(mA,mDiags,iC,iN,iS):
     mG=np.zeros((iN,iN))
     for i in prange(iC):
         mThisDiag=np.reshape(np.repeat(mDiags[i],iS),(iN,iS))
-        mG+=np.dot(mBA[i]/mThisDiag,mBA[i].T)
+        mG+=np.dot(mA[i]/mThisDiag,mA[i].T)
     mG=(mG-mG.T)/iC
     return mG
 
-def PerformGoldenSection(mBA,mU,mB,dLambda,dTheta):
+def PerformGoldenSection(mA,mU,mB,dLambda,dTheta):
     iIter=0
     iMaxIter=15
     iGuesses=4
     (dStepLB,dStepUB)=(0,1)
     bLossOnly=True
-    (iC,iN,iS)=mBA.shape
-    mExpU=scipy.linalg.expm(mU)
-    m4BS=np.empty((iGuesses,iC,iN,iS))
-    m4BS[0]=mBA.copy()
-    m4BS[1]=TransformData(mExpU,mBA.copy(),iC)
-    m4BS[2]=(1-dTheta)*m4BS[1]+dTheta*m4BS[0]
-    m4BS[3]=(1-dTheta)*m4BS[0]+dTheta*m4BS[1]
-    (mBA,mExpU)=(None,None)
-    dLoss2=ComputeLoss(m4BS[2],dLambda,bLossOnly)
-    dLoss3=ComputeLoss(m4BS[3],dLambda,bLossOnly)
+    (iC,iN,iS)=mA.shape
+    mR=scipy.linalg.expm(mU)
+    mAS=np.empty((iGuesses,iC,iN,iS))
+    mAS[0]=mA.copy()
+    mAS[1]=RotateData(mR,mA.copy(),iC)
+    mAS[2]=(1-dTheta)*mAS[1]+dTheta*mAS[0]
+    mAS[3]=(1-dTheta)*mAS[0]+dTheta*mAS[1]
+    (mA,mR)=(None,None)
+    dLoss2=ComputeLoss(mAS[2],dLambda,bLossOnly)
+    dLoss3=ComputeLoss(mAS[3],dLambda,bLossOnly)
     while iIter<iMaxIter:
         if (dLoss2<dLoss3):
-            m4BS[1]=m4BS[3]
-            m4BS[3]=m4BS[2]
+            mAS[1]=mAS[3]
+            mAS[3]=mAS[2]
             dLoss3=dLoss2
             dStepUB=dStepLB+dTheta*(dStepUB-dStepLB)
-            m4BS[2]=m4BS[1]-dTheta*(m4BS[1]-m4BS[0])
-            dLoss2=ComputeLoss(m4BS[2],dLambda,bLossOnly)
+            mAS[2]=mAS[1]-dTheta*(mAS[1]-mAS[0])
+            dLoss2=ComputeLoss(mAS[2],dLambda,bLossOnly)
         else:
-            m4BS[0]=m4BS[2]
-            m4BS[2]=m4BS[3]
+            mAS[0]=mAS[2]
+            mAS[2]=mAS[3]
             dLoss2=dLoss3
             dStepLB=dStepUB-dTheta*(dStepUB-dStepLB)
-            m4BS[3]=m4BS[0]+dTheta*(m4BS[1]-m4BS[0])
-            dLoss3=ComputeLoss(m4BS[3],dLambda,bLossOnly)
+            mAS[3]=mAS[0]+dTheta*(mAS[1]-mAS[0])
+            dLoss3=ComputeLoss(mAS[3],dLambda,bLossOnly)
         iIter+=1
     return np.log(1+(dStepLB*(np.exp(1)-1)))
 
-def UpdateEstimates(mB,dStepSize,mU,mBA,iC):
-    mExpU=scipy.linalg.expm(dStepSize*mU)
-    mB=np.dot(mExpU,mB)
-    mBA=TransformData(mExpU,mBA,iC)
-    return mB,mBA
+def UpdateEstimates(mA,mU,mB,dStepSize,iC):
+    mR=scipy.linalg.expm(dStepSize*mU)
+    mB=np.dot(mR,mB)
+    mA=RotateData(mR,mA,iC)
+    return mB,mA
 
 @njit
-def TransformData(mT,mData,iC):
+def RotateData(mR,mData,iC):
     for i in prange(iC):
-        mData[i]=np.dot(mT,mData[i])
+        mData[i]=np.dot(mR,mData[i])
     return mData
 
 def Test():
@@ -168,8 +168,8 @@ def Test():
     for i in range(iC):
         dSSD+=np.power(mD[i]-np.diag(np.diag(mD[i])),2).sum()
     dRMSOFF = np.sqrt(dSSD/(iN*iN*iC))
-    mR = np.corrcoef(mDiags.T)
-    vEV = np.linalg.eigvalsh(mR)
-    dKappa = max(vEV)/min(vEV)
-    print("JADOC RMSD off-diagonal elements: " + str(dRMSOFF))
-    print("JADOC Condition number diagonals: " + str(dKappa))
+    mR=np.corrcoef(mDiags.T)
+    vEV=np.linalg.eigvalsh(mR)
+    dKappa=max(vEV)/min(vEV)
+    print("JADOC RMSD off-diagonal elements: "+str(dRMSOFF))
+    print("JADOC Condition number diagonals: "+str(dKappa))
