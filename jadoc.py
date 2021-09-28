@@ -169,7 +169,7 @@ def SimulateData(iK,iN,iR,dAlpha):
         mC[i]=(mR*(vD[None,:]))@mR.T
     return mC
 
-def TestJADOC():
+def Test():
     iK=10
     iN=100
     iR=1

@@ -32,7 +32,7 @@ In case you cannot create a customised conda environment (e.g. because of insuff
 Once the above has completed, you can now run the following commands sequently, to test if `jadoc` is functioning properly:
 
 ```
-python -c "import jadoc; jadoc.TestJADOC()"
+python -c "import jadoc; jadoc.Test()"
 ```
 
 This command should yield output along the following lines:
