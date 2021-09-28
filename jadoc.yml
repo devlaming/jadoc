@@ -6,4 +6,5 @@ dependencies:
     - numpy
     - scipy
     - numba
+    - pandas
 
