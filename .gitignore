@@ -2,3 +2,4 @@
 qndiag.py
 jade_cpu.py
 *.csv
+*.sh
