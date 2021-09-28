@@ -148,36 +148,54 @@ def RotateData(mR,mData):
         mData[i]=np.dot(mR,mData[i])
     return mData
 
-def Test():
-    iSeed=3426010694
+def SimulateData(iK,iN,iR,dAlpha):
+    print("Simulating "+str(iK)+" PSD matrices, each "+str(iN)+"-by-"+str(iN) \
+          +" for run "+str(iR)+" with alpha="+str(dAlpha))
+    iMainSeed=15348091
+    iRmax=10000
+    if iR>=iRmax:
+        return
+    rngMain=np.random.default_rng(iMainSeed)
+    vSeed=rngMain.integers(0,iMainSeed,iRmax)
+    iSeed=vSeed[iR]
     rng=np.random.default_rng(iSeed)
+    mX=rng.normal(size=(iN,iN))
+    mC=np.empty((iK,iN,iN))
+    for i in range(0,iK):
+        mXk=rng.normal(size=(iN,iN))
+        mXk=dAlpha*mX+(1-dAlpha)*mXk
+        mR=scipy.linalg.expm(mXk-(mXk.T))
+        vD=rng.chisquare(1,size=iN)
+        mC[i]=(mR*(vD[None,:]))@mR.T
+    return mC
+
+def TestJADOC():
     iK=10
     iN=100
-    print("Simulating "+str(iK)+" PSD matrices, each "+str(iN)+"-by-"+str(iN))
-    mC=np.empty((iK,iN,iN))
-    for i in range(iK):
-        mU=rng.uniform(size=(iN,iN))
-        mX=np.ones((iN,iN))
-        mX[mU<0.25] = 0
-        mX[mU>0.75] = 2
-        vF=mX.mean(axis=0)/2
-        mX=(mX-(2*vF)[None,:])/(np.sqrt(2*vF*(1-vF))[None,:])
-        mC[i]=np.dot(mX,mX.T)/iN
+    iR=1
+    dAlpha=1
+    mC=SimulateData(iK,iN,iR,dAlpha)
     dTimeStart=time.time()
     mB=PerformJADOC(mC)
     dTime=time.time()-dTimeStart
-    print("The JADOC algorithm took "+str(dTime)+" seconds")
+    print("Runtime: "+str(round(dTime,3))+" seconds")
     mD=np.empty((iK,iN,iN))
     for i in range(iK):
         mD[i]=np.dot(np.dot(mB,mC[i]),mB.T)
     mDiags=np.diagonal(mD,axis1=1,axis2=2).T
-    dSSD=0
+    dSS_C=0
+    dSS_BCBT=0
     for i in range(iK):
-        dSSD+=np.power(mD[i]-np.diag(np.diag(mD[i])),2).sum()
-    dRMSOFF = np.sqrt(dSSD/(iN*iN*iK))
+        dSS_C+=np.power(mC[i]-np.diag(np.diag(mC[i])),2).sum()
+        dSS_BCBT+=np.power(mD[i]-np.diag(np.diag(mD[i])),2).sum()
+    dRMS_C = np.sqrt(dSS_C/(iN*iN*iK))
+    dRMS_BCBT = np.sqrt(dSS_BCBT/(iN*iN*iK))
+    print("Root-mean-square deviation off-diagonals before transformation: " \
+          +str(round(dRMS_C,6)))
+    print("Root-mean-square deviation off-diagonals after transformation: " \
+          +str(round(dRMS_BCBT,6)))
     mR=np.corrcoef(mDiags.T)
     vEV=np.linalg.eigvalsh(mR)
     dKappa=max(vEV)/min(vEV)
-    print("JADOC RMSD off-diagonal elements: "+str(dRMSOFF))
-    print("JADOC Condition number diagonals: "+str(dKappa))
-
+    print("Condition number diagonals: "+str(round(dKappa,3)))
+    
