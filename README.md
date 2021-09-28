@@ -42,16 +42,16 @@ Starting JADOC
 Computing low-dimensional decomposition of input matrices
 Regularization coefficient = 1.5801940194385735
 Starting quasi-Newton algorithm with line search (golden section)
-ITER 0: L=34.726, RMSE(g)=0.003303, step=0.619
-ITER 1: L=34.098, RMSE(g)=0.008076, step=0.636
-ITER 2: L=32.305, RMSE(g)=0.011202, step=0.681
-ITER 3: L=30.668, RMSE(g)=0.008902, step=0.717
-ITER 4: L=29.841, RMSE(g)=0.004883, step=0.696
-ITER 5: L=29.491, RMSE(g)=0.002767, step=0.737
-ITER 6: L=29.353, RMSE(g)=0.001153, step=0.678
-ITER 7: L=29.307, RMSE(g)=0.000576, step=0.78
-ITER 8: L=29.301, RMSE(g)=0.000132, step=0.697
-ITER 9: L=29.3, RMSE(g)=6.1e-05, step=0.679
+ITER 0: L=34.726, RMSD(g)=0.003303, step=0.619
+ITER 1: L=34.098, RMSD(g)=0.008076, step=0.636
+ITER 2: L=32.305, RMSD(g)=0.011202, step=0.681
+ITER 3: L=30.668, RMSD(g)=0.008902, step=0.717
+ITER 4: L=29.841, RMSD(g)=0.004883, step=0.696
+ITER 5: L=29.491, RMSD(g)=0.002767, step=0.737
+ITER 6: L=29.353, RMSD(g)=0.001153, step=0.678
+ITER 7: L=29.307, RMSD(g)=0.000576, step=0.78
+ITER 8: L=29.301, RMSD(g)=0.000132, step=0.697
+ITER 9: L=29.3, RMSD(g)=6.1e-05, step=0.679
 Returning transformation matrix B
 Runtime: 1.181 seconds
 Root-mean-square deviation off-diagonals before transformation: 0.138853

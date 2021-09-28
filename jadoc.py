@@ -67,7 +67,7 @@ def PerformJADOC(mC,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,iS=None):
             bConverged=True
             break
         dStepSize=PerformGoldenSection(mA,mU,mB,dLambda)
-        print("ITER "+str(t)+": L="+str(round(dLoss,3))+", RMSE(g)=" \
+        print("ITER "+str(t)+": L="+str(round(dLoss,3))+", RMSD(g)=" \
               +str(round(dRMSG,6))+", step="+str(round(dStepSize,3)))
         (mB,mA)=UpdateEstimates(mA,mU,mB,dStepSize)
     if not(bConverged):
