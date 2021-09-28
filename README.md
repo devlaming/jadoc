@@ -79,7 +79,6 @@ for k in range(K):
 B=jadoc.PerformJADOC(C)
 
 print(B@B.T)
-
 ```
 
 The print statement at the end shows that the obtained transformation matrix is orthonormal within numerical precision.
