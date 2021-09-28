@@ -53,9 +53,9 @@ ITER 7: L=29.307, RMSE(g)=0.000576, step=0.78
 ITER 8: L=29.301, RMSE(g)=0.000132, step=0.697
 ITER 9: L=29.3, RMSE(g)=6.1e-05, step=0.679
 Returning transformation matrix B
-Runtime: 2.649 seconds
-Root-mean-square deviation off-diagonals before transformation: 0.138157
-Root-mean-square deviation off-diagonals after transformation: 0.046576
+Runtime: 1.181 seconds
+Root-mean-square deviation off-diagonals before transformation: 0.138853
+Root-mean-square deviation off-diagonals after transformation: 0.046811
 ```
 
 This output shows 10 positive (semi)-definite 100-by-100 matrices were generated, denoted by **C**<sub>1</sub>, ..., **C**<sub>10</sub>, after which JADOC calculated a matrix **B** such that **BC**<sub>*k*</sub>**B** is as diagonal as possible for *k* = 1, ..., 10. Runtime is printed together with the root-mean-square deviation of the off-diagonal elements of **C**<sub>*k*</sub> and **BC**<sub>*k*</sub>**B**.

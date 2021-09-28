@@ -187,8 +187,8 @@ def TestJADOC():
     for i in range(iK):
         dSS_C+=np.power(mC[i]-np.diag(np.diag(mC[i])),2).sum()
         dSS_BCBT+=np.power(mD[i]-np.diag(np.diag(mD[i])),2).sum()
-    dRMS_C = np.sqrt(dSS_C/(iN*iN*iK))
-    dRMS_BCBT = np.sqrt(dSS_BCBT/(iN*iN*iK))
+    dRMS_C=np.sqrt(dSS_C/(iN*(iN-1)*iK))
+    dRMS_BCBT=np.sqrt(dSS_BCBT/(iN*(iN-1)*iK))
     print("Root-mean-square deviation off-diagonals before transformation: " \
           +str(round(dRMS_C,6)))
     print("Root-mean-square deviation off-diagonals after transformation: " \
