@@ -32,10 +32,33 @@ In case you cannot create a customised conda environment (e.g. because of insuff
 Once the above has completed, you can now run the following commands sequently, to test if `jadoc` is functioning properly:
 
 ```
-python
-import jadoc
-jadoc.Test()
+python -c "import jadoc; jadoc.TestJADOC()"
 ```
+
+This command should yield output along the following lines:
+```
+Simulating 10 distinct 100-by-100 P(S)D matrices with alpha=1, for run 1
+Starting JADOC
+Computing low-dimensional decomposition of input matrices
+Regularization coefficient = 1.5801940194385735
+Starting quasi-Newton algorithm with line search (golden section)
+ITER 0: L=34.726, RMSE(g)=0.003303, step=0.619
+ITER 1: L=34.098, RMSE(g)=0.008076, step=0.636
+ITER 2: L=32.305, RMSE(g)=0.011202, step=0.681
+ITER 3: L=30.668, RMSE(g)=0.008902, step=0.717
+ITER 4: L=29.841, RMSE(g)=0.004883, step=0.696
+ITER 5: L=29.491, RMSE(g)=0.002767, step=0.737
+ITER 6: L=29.353, RMSE(g)=0.001153, step=0.678
+ITER 7: L=29.307, RMSE(g)=0.000576, step=0.78
+ITER 8: L=29.301, RMSE(g)=0.000132, step=0.697
+ITER 9: L=29.3, RMSE(g)=6.1e-05, step=0.679
+Returning transformation matrix B
+Runtime: 2.649 seconds
+Root-mean-square deviation off-diagonals before transformation: 0.138157
+Root-mean-square deviation off-diagonals after transformation: 0.046576
+```
+
+This output shows 10 positive (semi)-definite 100-by-100 matrices were generated, denoted by **C**<sub>1</sub>, ..., **C**<sub>10</sub>, after which JADOC calculated a matrix **B** such that **BC**<sub>*k*</sub>**B** is as diagonal as possible for *k* = 1, ..., 10. Runtime is printed together with the root-mean-square deviation of the off-diagonal elements of **C**<sub>*k*</sub> and **BC**<sub>*k*</sub>**B**.
 
 ## Tutorial
 
