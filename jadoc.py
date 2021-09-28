@@ -149,8 +149,8 @@ def RotateData(mR,mData):
     return mData
 
 def SimulateData(iK,iN,iR,dAlpha):
-    print("Simulating "+str(iK)+" PSD matrices, each "+str(iN)+"-by-"+str(iN) \
-          +" for run "+str(iR)+" with alpha="+str(dAlpha))
+    print("Simulating "+str(iK)+" distinct "+str(iN)+"-by-"+str(iN) \
+          +" P(S)D matrices with alpha="+str(dAlpha)+", for run "+str(iR))
     iMainSeed=15348091
     iRmax=10000
     if iR>=iRmax:
@@ -182,7 +182,6 @@ def TestJADOC():
     mD=np.empty((iK,iN,iN))
     for i in range(iK):
         mD[i]=np.dot(np.dot(mB,mC[i]),mB.T)
-    mDiags=np.diagonal(mD,axis1=1,axis2=2).T
     dSS_C=0
     dSS_BCBT=0
     for i in range(iK):
@@ -194,8 +193,5 @@ def TestJADOC():
           +str(round(dRMS_C,6)))
     print("Root-mean-square deviation off-diagonals after transformation: " \
           +str(round(dRMS_BCBT,6)))
-    mR=np.corrcoef(mDiags.T)
-    vEV=np.linalg.eigvalsh(mR)
-    dKappa=max(vEV)/min(vEV)
-    print("Condition number diagonals: "+str(round(dKappa,3)))
+
     
