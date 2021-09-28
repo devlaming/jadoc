@@ -62,7 +62,27 @@ This output shows 10 positive (semi)-definite 100-by-100 matrices were generated
 
 ## Tutorial
 
-tba
+Once `jadoc` is up-and-running, you can simply incorporate it in your Python code, as illustrated in the following bit of Python code:
+
+```
+import jadoc
+import numpy as np
+
+N=100
+K=10
+C=np.empty((K,N,N))
+
+for k in range(K):
+    X=np.random.normal(size=(N,N))
+    C[k]=(X@X.T)/N
+
+B=jadoc.PerformJADOC(C)
+
+print(B@B.T)
+
+```
+
+The print statement at the end shows that the obtained transformation matrix is orthonormal within numerical precision.
 
 ## Updating `jadoc`
 
