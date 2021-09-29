@@ -3,7 +3,7 @@ import numpy as np
 import time
 from numba import njit,prange
 
-def PerformJADOC(mC,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,iS=None):
+def PerformJADOC(mC,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=None):
     """Joint Approximate Diagonalization under Orthogonality Constraints
     (JADOC)
     
@@ -26,7 +26,10 @@ def PerformJADOC(mC,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,iS=None):
     
     dTauH : float, optional
         minimum value of second-order derivatives; default=1E-2
-        
+    
+    dLambda0 : float, optional
+        regularisation coefficient; default=1
+    
     iS : int, optional
         replace mC[i] by rank-iS approximation; default=None
         set to ceil(iN/iK) if None provided
@@ -49,7 +52,7 @@ def PerformJADOC(mC,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,iS=None):
     else: print("Computing low-dimensional decomposition of input matrices")
     mB=np.eye(iN)
     mA=np.empty((iK,iN,iS))
-    dLambda=1
+    dLambda=dLambda0
     for i in range(iK):
         if iS<iN:
             (vD,mP)=scipy.linalg.eigh(mC[i],subset_by_index=[iN-iS,iN-1])
@@ -194,4 +197,3 @@ def Test():
     print("Root-mean-square deviation off-diagonals after transformation: " \
           +str(round(dRMS_BCBT,6)))
 
-    
