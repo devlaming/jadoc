@@ -53,6 +53,7 @@ def PerformJADOC(mC,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=None):
     mB=np.eye(iN)
     mA=np.empty((iK,iN,iS))
     dLambda=dLambda0
+    print("Initial regularization coefficient = "+str(dLambda))
     for i in range(iK):
         if iS<iN:
             (vD,mP)=scipy.linalg.eigh(mC[i],subset_by_index=[iN-iS,iN-1])
@@ -60,7 +61,7 @@ def PerformJADOC(mC,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=None):
         vD[vD<0]=0
         dLambda+=((np.trace(mC[i])-vD.sum())/(iN*iK))
         mA[i]=mP*(np.sqrt(vD)[None,:])
-    print("Regularization coefficient = "+str(dLambda))
+    print("Final regularization coefficient = "+str(dLambda))
     (mP,vD,mC)=(None,None,None)
     print("Starting quasi-Newton algorithm with line search (golden section)")
     bConverged=False
