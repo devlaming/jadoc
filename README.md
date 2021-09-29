@@ -40,7 +40,8 @@ This command should yield output along the following lines:
 Simulating 10 distinct 100-by-100 P(S)D matrices with alpha=1, for run 1
 Starting JADOC
 Computing low-dimensional decomposition of input matrices
-Regularization coefficient = 1.5801940194385735
+Initial regularization coefficient = 1
+Final regularization coefficient = 1.5801940194385735
 Starting quasi-Newton algorithm with line search (golden section)
 ITER 0: L=34.726, RMSD(g)=0.003303, step=0.619
 ITER 1: L=34.098, RMSD(g)=0.008076, step=0.636
@@ -53,7 +54,7 @@ ITER 7: L=29.307, RMSD(g)=0.000576, step=0.78
 ITER 8: L=29.301, RMSD(g)=0.000132, step=0.697
 ITER 9: L=29.3, RMSD(g)=6.1e-05, step=0.679
 Returning transformation matrix B
-Runtime: 1.181 seconds
+Runtime: 1.72 seconds
 Root-mean-square deviation off-diagonals before transformation: 0.138853
 Root-mean-square deviation off-diagonals after transformation: 0.046811
 ```
