@@ -28,7 +28,7 @@ def PerformJADOC(mC,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=None):
         minimum value of second-order derivatives; default=1E-2
     
     dLambda0 : float, optional
-        regularisation coefficient; default=1
+        regularization coefficient; default=1
     
     iS : int, optional
         replace mC[i] by rank-iS approximation; default=None
