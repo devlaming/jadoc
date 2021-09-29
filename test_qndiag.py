@@ -19,8 +19,11 @@ for dAlpha in vAlpha:
         iK=10
         mC=jadoc.SimulateData(iK,iN,iR,dAlpha)
         dT0=time.time()
-        (mD,mB)=qndiag.qndiag(mC,ortho=True)
+        (mB,_)=qndiag.qndiag(mC,ortho=True)
         dT=time.time()-dT0
+        mD=np.empty((iK,iN,iN))
+        for i in range(iK):
+            mD[i]=np.dot(np.dot(mB,mC[i]),mB.T)
         dSSD=0
         for i in range(iK):
             dSSD+=np.power(mD[i]-np.diag(np.diag(mD[i])),2).sum()
@@ -31,8 +34,11 @@ for dAlpha in vAlpha:
         iN=256
         mC=jadoc.SimulateData(iK,iN,iR,dAlpha)
         dT0=time.time()
-        (mD,mB)=qndiag.qndiag(mC,ortho=True)
+        (mB,_)=qndiag.qndiag(mC,ortho=True)
         dT=time.time()-dT0
+        mD=np.empty((iK,iN,iN))
+        for i in range(iK):
+            mD[i]=np.dot(np.dot(mB,mC[i]),mB.T)
         dSSD=0
         for i in range(iK):
             dSSD+=np.power(mD[i]-np.diag(np.diag(mD[i])),2).sum()
