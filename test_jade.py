@@ -6,9 +6,9 @@ import jadoc
 import jade_cpu # source: https://github.com/gabrieldernbach/approximate_joint_diagonalization/blob/master/jade/jade_cpu.py ; accessed: 28/09/2021
 
 iR=int(sys.argv[1])
-vAlpha=[0,0.25,0.5,0.75,1]
+vAlpha=[0,0.25,0.5,0.75]
 vN=[100,200,300,400,500]
-vK=[1,2,4,8,16,32]
+vK=[2,4,8,16,32]
 dfTime_N=pd.DataFrame(index=vAlpha,columns=vN)
 dfRMSD_N=pd.DataFrame(index=vAlpha,columns=vN)
 dfTime_K=pd.DataFrame(index=vAlpha,columns=vK)
