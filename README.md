@@ -124,7 +124,7 @@ conda env update --file jadoc.yml
 Before contacting us, please try the following:
 
 1. Go over the tutorial in this `README.md` file
-2. Go over the method, described in the paper (citation below)
+2. Go over the method, described in the preprint (citation below)
 
 ### Contact
 
@@ -132,13 +132,13 @@ In case you have a question that is not resolved by going over the preceding two
 
 ## Citation
 
-If you use the software, please cite
+If you use the software, please cite the preprint of our manuscript:
 
 [R. de Vlaming and E.A.W. Slob (2021). Joint Approximate Diagonalization under Orthogonality Constraints. *arXiv*:**2110.03235**.](https://arxiv.org/abs/2110.03235)
 
 ## Derivations
 
-For full details on the derivation underpunning the `jadoc` tool, see the paper, available on **tba**.
+For full details on the derivation underpunning the `jadoc` tool, see the prepint of our manuscript, available on [arXiv](https://arxiv.org/abs/2110.03235).
 
 ## License
 
