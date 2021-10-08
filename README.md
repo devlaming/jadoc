@@ -134,7 +134,7 @@ In case you have a question that is not resolved by going over the preceding two
 
 If you use the software, please cite
 
-[R. de Vlaming and E.A.W. Slob (2021). Joint Approximate Diagonalization under Orthogonality Constraints. *tba*: **tba**.](tba)
+[R. de Vlaming and E.A.W. Slob (2021). Joint Approximate Diagonalization under Orthogonality Constraints. *arXiv*:**2110.03235**.](https://arxiv.org/abs/2110.03235)
 
 ## Derivations
 
