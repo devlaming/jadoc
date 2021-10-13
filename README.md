@@ -37,26 +37,30 @@ python -c "import jadoc; jadoc.Test()"
 
 This command should yield output along the following lines:
 ```
-Simulating 10 distinct 100-by-100 P(S)D matrices with alpha=1, for run 1
+Simulating 10 distinct 100-by-100 P(S)D matrices with alpha=0.9, for run 1
 Starting JADOC
 Computing low-dimensional decomposition of input matrices
 Initial regularization coefficient = 1
-Final regularization coefficient = 1.5801940194385735
+Final regularization coefficient = 1.580194019438573
 Starting quasi-Newton algorithm with line search (golden section)
-ITER 0: L=34.726, RMSD(g)=0.003303, step=0.619
-ITER 1: L=34.098, RMSD(g)=0.008076, step=0.636
-ITER 2: L=32.305, RMSD(g)=0.011202, step=0.681
-ITER 3: L=30.668, RMSD(g)=0.008902, step=0.717
-ITER 4: L=29.841, RMSD(g)=0.004883, step=0.696
-ITER 5: L=29.491, RMSD(g)=0.002767, step=0.737
-ITER 6: L=29.353, RMSD(g)=0.001153, step=0.678
-ITER 7: L=29.307, RMSD(g)=0.000576, step=0.78
-ITER 8: L=29.301, RMSD(g)=0.000132, step=0.697
-ITER 9: L=29.3, RMSD(g)=6.1e-05, step=0.679
+ITER 0: L=34.74, RMSD(g)=0.003092, step=0.618
+ITER 1: L=34.243, RMSD(g)=0.006551, step=0.629
+ITER 2: L=33.008, RMSD(g)=0.008855, step=0.659
+ITER 3: L=31.86, RMSD(g)=0.007825, step=0.71
+ITER 4: L=31.057, RMSD(g)=0.005775, step=0.758
+ITER 5: L=30.577, RMSD(g)=0.003688, step=0.772
+ITER 6: L=30.345, RMSD(g)=0.0023, step=0.822
+ITER 7: L=30.259, RMSD(g)=0.001238, step=0.872
+ITER 8: L=30.234, RMSD(g)=0.000667, step=0.804
+ITER 9: L=30.227, RMSD(g)=0.000398, step=0.73
+ITER 10: L=30.224, RMSD(g)=0.000261, step=0.71
+ITER 11: L=30.222, RMSD(g)=0.000181, step=0.713
+ITER 12: L=30.221, RMSD(g)=0.000132, step=0.716
+ITER 13: L=30.221, RMSD(g)=0.000101, step=0.715
 Returning transformation matrix B
-Runtime: 1.72 seconds
-Root-mean-square deviation off-diagonals before transformation: 0.138853
-Root-mean-square deviation off-diagonals after transformation: 0.046811
+Runtime: 0.846 seconds
+Root-mean-square deviation off-diagonals before transformation: 0.13898
+Root-mean-square deviation off-diagonals after transformation: 0.07789
 ```
 
 This output shows 10 positive (semi)-definite 100-by-100 matrices were generated, denoted by **C**<sub>1</sub>, ..., **C**<sub>10</sub>, after which JADOC calculated a matrix **B** such that **BC**<sub>*k*</sub>**B** is as diagonal as possible for *k* = 1, ..., 10. Runtime is printed together with the root-mean-square deviation of the off-diagonal elements of **C**<sub>*k*</sub> and **BC**<sub>*k*</sub>**B**.
