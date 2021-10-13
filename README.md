@@ -63,7 +63,7 @@ Root-mean-square deviation off-diagonals before transformation: 0.13898
 Root-mean-square deviation off-diagonals after transformation: 0.07789
 ```
 
-This output shows 10 positive (semi)-definite 100-by-100 matrices were generated, denoted by **C**<sub>1</sub>, ..., **C**<sub>10</sub>, after which JADOC calculated a matrix **B** such that **BC**<sub>*k*</sub>**B** is as diagonal as possible for *k* = 1, ..., 10. Runtime is printed together with the root-mean-square deviation of the off-diagonal elements of **C**<sub>*k*</sub> and **BC**<sub>*k*</sub>**B**.
+This output shows 10 positive (semi)-definite 100-by-100 matrices were generated, denoted by **C**<sub>1</sub>, ..., **C**<sub>10</sub>, after which JADOC calculated a matrix **B** such that **BC**<sub>*k*</sub>**B**<sup>T</sup> is as diagonal as possible for *k* = 1, ..., 10. Runtime is printed together with the root-mean-square deviation of the off-diagonal elements of **C**<sub>*k*</sub> and **BC**<sub>*k*</sub>**B**<sup>T</sup>.
 
 ## Tutorial
 
