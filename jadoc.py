@@ -3,7 +3,7 @@ import numpy as np
 import time
 from numba import njit,prange
 
-def PerformJADOC(mC,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=None):
+def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=None):
     """Joint Approximate Diagonalization under Orthogonality Constraints
     (JADOC)
     
@@ -14,6 +14,10 @@ def PerformJADOC(mC,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=None):
     ------
     mC : np.ndarray with shape (iK, iN, iN)
         iK symmetric PSD iN-by-iN matrices to jointly diagonalize
+    
+    mB0 : np.ndarray with shape (iN, iN), optional
+        starting value for orthonormal transformation matrix such
+        that mB@mC[i]@mB.T is approximately diagonal for all i
     
     iT : int, optional
         maximum number of iterations; default=100
@@ -37,7 +41,8 @@ def PerformJADOC(mC,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=None):
     Output
     ------
     mB : np.ndarray with shape (iN, iN)
-        matrix such that mB@mC[i]@mB.T is approximately diagonal for all i
+        orthonormal matrix such that mB@mC[i]@mB.T is
+        approximately diagonal for all i
     """
     print("Starting JADOC")
     (iK,iN,_)=mC.shape
@@ -50,7 +55,11 @@ def PerformJADOC(mC,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=None):
         raise ValueError("Desired rank (iS) exceeds dimensionality" \
                          +" of input matrices (iN)")
     else: print("Computing low-dimensional decomposition of input matrices")
-    mB=np.eye(iN)
+    if mB0 is None: mB=np.eye(iN)
+    elif mB0.shape!=(iN,iN):
+        raise ValueError("Starting value transformation matrix" \
+                         +" has wrong shape")
+    else: mB=mB0
     mA=np.empty((iK,iN,iS))
     dLambda=dLambda0
     print("Initial regularization coefficient = "+str(dLambda))
@@ -61,6 +70,7 @@ def PerformJADOC(mC,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=None):
         vD[vD<0]=0
         dLambda+=((np.trace(mC[i])-vD.sum())/(iN*iK))
         mA[i]=mP*(np.sqrt(vD)[None,:])
+        if mB0 is not None: mA[i]=mB@mA[i]
     print("Final regularization coefficient = "+str(dLambda))
     (mP,vD,mC)=(None,None,None)
     print("Starting quasi-Newton algorithm with line search (golden section)")
@@ -177,7 +187,7 @@ def Test():
     iK=10
     iN=100
     iR=1
-    dAlpha=1
+    dAlpha=0.9
     mC=SimulateData(iK,iN,iR,dAlpha)
     dTimeStart=time.time()
     mB=PerformJADOC(mC)
