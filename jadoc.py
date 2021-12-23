@@ -48,8 +48,8 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=
     (iK,iN,_)=mC.shape
     if iS is None:
         iS=(iN/iK)
-        if (iS-round(iS))>0: iS=round(iS)+1
-        else: iS=round(iS)
+        if (iS-int(iS))>0: iS=int(iS)+1
+        else: iS=int(iS)
     if iS==iN: print("Computing decomposition of input matrices")
     elif iS>iN:
         raise ValueError("Desired rank (iS) exceeds dimensionality" \
