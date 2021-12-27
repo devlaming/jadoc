@@ -29,7 +29,7 @@ conda activate jadoc
 
 In case you cannot create a customised conda environment (e.g. because of insufficient user rights) or simply prefer to use Anaconda Navigator or `pip` to install packages e.g. in your base environment rather than a custom environment, please note that `jadoc` only requires Python 3.x with the packages `numpy`, `scipy`, `pandas`, and `numba` installed.
 
-Once the above has completed, you can now run the following commands sequently, to test if `jadoc` is functioning properly:
+Once the above has been completed, you can now run the following commands, to test if `jadoc` is functioning properly:
 
 ```
 python -c "import jadoc; jadoc.Test()"
