@@ -13,7 +13,7 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=
     Input
     ------
     mC : np.ndarray with shape (iK, iN, iN)
-        iK symmetric PSD iN-by-iN matrices to jointly diagonalize
+        iK symmetric iN-by-iN matrices to jointly diagonalize
     
     mB0 : np.ndarray with shape (iN, iN), optional
         starting value for orthonormal transformation matrix such
@@ -64,11 +64,14 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=
     dLambda=dLambda0
     print("Initial regularization coefficient = "+str(dLambda))
     for i in range(iK):
-        if iS<iN:
-            (vD,mP)=scipy.linalg.eigh(mC[i],subset_by_index=[iN-iS,iN-1])
-        else: (vD,mP)=np.linalg.eigh(mC[i])
-        vD[vD<0]=0
-        dLambda+=((np.trace(mC[i])-vD.sum())/(iN*iK))
+        (vD,mP)=np.linalg.eigh(mC[i])
+        vD=abs(vD)
+        dSD1=vD.sum()
+        vLeadEVs=((vD.argsort().argsort())>=iN-iS)
+        vD=vD[vLeadEVs]
+        dSD2=vD.sum()
+        mP=mP[:,vLeadEVs]
+        dLambda+=((dSD1-dSD2)/(iN*iK))
         mA[i]=mP*(np.sqrt(vD)[None,:])
         if mB0 is not None: mA[i]=mB@mA[i]
     print("Final regularization coefficient = "+str(dLambda))
@@ -162,7 +165,28 @@ def RotateData(mR,mData):
         mData[i]=np.dot(mR,mData[i])
     return mData
 
-def SimulateData(iK,iN,iR,dAlpha):
+def SimulateSym(iK,iN,iR,dAlpha):
+    print("Simulating "+str(iK)+" distinct "+str(iN)+"-by-"+str(iN) \
+          +" symmetric matrices with alpha="+str(dAlpha)+", for run "+str(iR))
+    iMainSeed=54803289
+    iRmax=10000
+    if iR>=iRmax:
+        return
+    rngMain=np.random.default_rng(iMainSeed)
+    vSeed=rngMain.integers(0,iMainSeed,iRmax)
+    iSeed=vSeed[iR]
+    rng=np.random.default_rng(iSeed)
+    mX=rng.normal(size=(iN,iN))
+    mC=np.empty((iK,iN,iN))
+    for i in range(0,iK):
+        mXk=rng.normal(size=(iN,iN))
+        mXk=dAlpha*mX+(1-dAlpha)*mXk
+        mR=scipy.linalg.expm(mXk-(mXk.T))
+        vD=rng.normal(size=iN)
+        mC[i]=(mR*(vD[None,:]))@mR.T
+    return mC
+
+def SimulatePSD(iK,iN,iR,dAlpha):
     print("Simulating "+str(iK)+" distinct "+str(iN)+"-by-"+str(iN) \
           +" P(S)D matrices with alpha="+str(dAlpha)+", for run "+str(iR))
     iMainSeed=15348091
@@ -188,7 +212,7 @@ def Test():
     iN=100
     iR=1
     dAlpha=0.9
-    mC=SimulateData(iK,iN,iR,dAlpha)
+    mC=SimulateSym(iK,iN,iR,dAlpha)
     dTimeStart=time.time()
     mB=PerformJADOC(mC)
     dTime=time.time()-dTimeStart
@@ -207,4 +231,3 @@ def Test():
           +str(round(dRMS_C,6)))
     print("Root-mean-square deviation off-diagonals after transformation: " \
           +str(round(dRMS_BCBT,6)))
-
