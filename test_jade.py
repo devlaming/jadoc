@@ -17,7 +17,7 @@ jadoc.Test()
 for dAlpha in vAlpha:
     for iN in vN:
         iK=10
-        mC=jadoc.SimulateData(iK,iN,iR,dAlpha)
+        mC=jadoc.SimulatePSD(iK,iN,iR,dAlpha)
         dT0=time.time()
         (mD,mB)=jade_cpu.jade_parallel(mC)
         dT=time.time()-dT0
@@ -29,7 +29,7 @@ for dAlpha in vAlpha:
         dfRMSD_N.loc[dAlpha,iN]=dRMSD
     for iK in vK:
         iN=256
-        mC=jadoc.SimulateData(iK,iN,iR,dAlpha)
+        mC=jadoc.SimulatePSD(iK,iN,iR,dAlpha)
         dT0=time.time()
         (mD,mB)=jade_cpu.jade_parallel(mC)
         dT=time.time()-dT0
