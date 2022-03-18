@@ -13,11 +13,11 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=
     Input
     ------
     mC : np.ndarray with shape (iK, iN, iN)
-        iK symmetric iN-by-iN matrices to jointly diagonalize
+        iK Hermitian iN-by-iN matrices to jointly diagonalize
     
     mB0 : np.ndarray with shape (iN, iN), optional
-        starting value for orthonormal transformation matrix such
-        that mB@mC[i]@mB.T is approximately diagonal for all i
+        starting value for unitary transformation matrix such
+        that mB@mC[i]@(mB.conj().T) is approximately diagonal for all i
     
     iT : int, optional
         maximum number of iterations; default=100
@@ -41,7 +41,7 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=
     Output
     ------
     mB : np.ndarray with shape (iN, iN)
-        orthonormal matrix such that mB@mC[i]@mB.T is
+        orthonormal matrix such that mB@mC[i]@(mB.conj().T) is
         approximately diagonal for all i
     """
     print("Starting JADOC")
@@ -60,7 +60,7 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=
         raise ValueError("Starting value transformation matrix" \
                          +" has wrong shape")
     else: mB=mB0
-    mA=np.empty((iK,iN,iS))
+    mA=np.empty((iK,iN,iS),dtype='complex128')
     dLambda=dLambda0
     print("Initial regularization coefficient = "+str(dLambda))
     for i in range(iK):
@@ -73,7 +73,7 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=
         mP=mP[:,vLeadEVs]
         dLambda+=((dSD1-dSD2)/(iN*iK))
         mA[i]=mP*(np.sqrt(vD)[None,:])
-        if mB0 is not None: mA[i]=mB@mA[i]
+        if mB0 is not None: mA[i]=np.dot(mB,mA[i])
     print("Final regularization coefficient = "+str(dLambda))
     (mP,vD,mC)=(None,None,None)
     print("Starting quasi-Newton algorithm with line search (golden section)")
@@ -93,28 +93,28 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=
     return mB
 
 def ComputeLoss(mA,dLambda,dTauH=None,bLossOnly=False):
-    mDiags=(np.power(mA,2).sum(axis=2))+dLambda
+    mDiags=((np.real(mA)**2).sum(axis=2))+((np.imag(mA)**2).sum(axis=2))\
+        +dLambda
     (iK,iN,iS)=mA.shape
     dLoss=0.5*(np.log(mDiags).sum())/iK
     if bLossOnly:
         return dLoss
     else:
         mG=ComputeGradient(mA,mDiags)
-        dRMSG=np.sqrt((np.power(mG,2).sum())/(iN*(iN-1)))
+        dRMSG=np.sqrt((((np.real(mG)**2).sum())+((np.imag(mG)**2).sum()))\
+                      /(iN*(iN-1)))
         mH=(mDiags[:,:,None]/mDiags[:,None,:]).mean(axis=0)
         mH=mH+mH.T-2.0
         mH[mH<dTauH]=dTauH
         mU=-mG/mH
         return dLoss,mDiags,dRMSG,mU
 
-@njit
 def ComputeGradient(mA,mDiags):
-    (iK,iN,iS)=mA.shape
-    mG=np.zeros((iN,iN))
+    (iK,iN,_)=mA.shape
+    mG=np.zeros((iN,iN),dtype='complex128')
     for i in prange(iK):
-        mThisDiag=np.reshape(np.repeat(mDiags[i],iS),(iN,iS))
-        mG+=np.dot(mA[i]/mThisDiag,mA[i].T)
-    mG=(mG-mG.T)/iK
+        mG+=np.dot(mA[i]/mDiags[i,:,None],mA[i].conj().T)
+    mG=(mG-(mG.conj().T))/iK
     return mG
 
 def PerformGoldenSection(mA,mU,mB,dLambda):
@@ -126,7 +126,7 @@ def PerformGoldenSection(mA,mU,mB,dLambda):
     bLossOnlyGold=True
     (iK,iN,iS)=mA.shape
     mR=scipy.linalg.expm(mU)
-    mAS=np.empty((iGuesses,iK,iN,iS))
+    mAS=np.empty((iGuesses,iK,iN,iS),dtype='complex128')
     mAS[0]=mA.copy()
     mAS[1]=RotateData(mR,mA.copy())
     mAS[2]=(1-dTheta)*mAS[1]+dTheta*mAS[0]
@@ -165,6 +165,27 @@ def RotateData(mR,mData):
         mData[i]=np.dot(mR,mData[i])
     return mData
 
+def SimulateHermitian(iK,iN,iR,dAlpha):
+    print("Simulating "+str(iK)+" distinct "+str(iN)+"-by-"+str(iN) \
+          +" Hermitian matrices with alpha="+str(dAlpha)+", for run "+str(iR))
+    iMainSeed=27455131
+    iRmax=10000
+    if iR>=iRmax:
+        return
+    rngMain=np.random.default_rng(iMainSeed)
+    vSeed=rngMain.integers(0,iMainSeed,iRmax)
+    iSeed=vSeed[iR]
+    rng=np.random.default_rng(iSeed)
+    mX=rng.normal(size=(iN,iN))+1j*rng.normal(size=(iN,iN))
+    mC=np.empty((iK,iN,iN),dtype='complex128')
+    for i in range(0,iK):
+        mXk=rng.normal(size=(iN,iN))+1j*rng.normal(size=(iN,iN))
+        mXk=dAlpha*mX+(1-dAlpha)*mXk
+        mR=scipy.linalg.expm(mXk-(mXk.conj().T))
+        vD=rng.normal(size=iN)
+        mC[i]=np.dot(mR*(vD[None,:]),mR.conj().T)
+    return mC
+
 def SimulateSym(iK,iN,iR,dAlpha):
     print("Simulating "+str(iK)+" distinct "+str(iN)+"-by-"+str(iN) \
           +" symmetric matrices with alpha="+str(dAlpha)+", for run "+str(iR))
@@ -183,7 +204,7 @@ def SimulateSym(iK,iN,iR,dAlpha):
         mXk=dAlpha*mX+(1-dAlpha)*mXk
         mR=scipy.linalg.expm(mXk-(mXk.T))
         vD=rng.normal(size=iN)
-        mC[i]=(mR*(vD[None,:]))@mR.T
+        mC[i]=np.dot(mR*(vD[None,:]),mR.T)
     return mC
 
 def SimulatePSD(iK,iN,iR,dAlpha):
@@ -204,7 +225,7 @@ def SimulatePSD(iK,iN,iR,dAlpha):
         mXk=dAlpha*mX+(1-dAlpha)*mXk
         mR=scipy.linalg.expm(mXk-(mXk.T))
         vD=rng.chisquare(1,size=iN)
-        mC[i]=(mR*(vD[None,:]))@mR.T
+        mC[i]=np.dot(mR*(vD[None,:]),mR.T)
     return mC
 
 def Test():
@@ -212,22 +233,24 @@ def Test():
     iN=100
     iR=1
     dAlpha=0.9
-    mC=SimulateSym(iK,iN,iR,dAlpha)
+    mC=SimulateHermitian(iK,iN,iR,dAlpha)
     dTimeStart=time.time()
     mB=PerformJADOC(mC)
     dTime=time.time()-dTimeStart
     print("Runtime: "+str(round(dTime,3))+" seconds")
-    mD=np.empty((iK,iN,iN))
+    mD=np.empty((iK,iN,iN),dtype='complex128')
     for i in range(iK):
-        mD[i]=np.dot(np.dot(mB,mC[i]),mB.T)
+        mD[i]=np.dot(np.dot(mB,mC[i]),mB.conj().T)
     dSS_C=0
-    dSS_BCBT=0
+    dSS_D=0
     for i in range(iK):
-        dSS_C+=np.power(mC[i]-np.diag(np.diag(mC[i])),2).sum()
-        dSS_BCBT+=np.power(mD[i]-np.diag(np.diag(mD[i])),2).sum()
+        mOffPre=mC[i]-np.diag(np.diag(mC[i]))
+        mOffPost=mD[i]-np.diag(np.diag(mD[i]))
+        dSS_C+=(np.real(mOffPre)**2).sum()+(np.imag(mOffPre)**2).sum()
+        dSS_D+=(np.real(mOffPost)**2).sum()+(np.imag(mOffPost)**2).sum()
     dRMS_C=np.sqrt(dSS_C/(iN*(iN-1)*iK))
-    dRMS_BCBT=np.sqrt(dSS_BCBT/(iN*(iN-1)*iK))
+    dRMS_D=np.sqrt(dSS_D/(iN*(iN-1)*iK))
     print("Root-mean-square deviation off-diagonals before transformation: " \
           +str(round(dRMS_C,6)))
     print("Root-mean-square deviation off-diagonals after transformation: " \
-          +str(round(dRMS_BCBT,6)))
+          +str(round(dRMS_D,6)))
