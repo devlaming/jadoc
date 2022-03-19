@@ -36,12 +36,12 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=
     
     iS : int, optional
         replace mC[i] by rank-iS approximation; default=None
-        set to ceil(iN/iK) if None provided
+        (set to ceil(iN/iK) under the default value)
     
     Output
     ------
     mB : np.ndarray with shape (iN, iN)
-        orthonormal matrix such that mB@mC[i]@(mB.conj().T) is
+        unitary matrix such that mB@mC[i]@(mB.conj().T) is
         approximately diagonal for all i
     """
     print("Starting JADOC")
@@ -100,7 +100,9 @@ def ComputeLoss(mA,dLambda,dTauH=None,bLossOnly=False):
     if bLossOnly:
         return dLoss
     else:
-        mG=ComputeGradient(mA,mDiags)
+        mF=np.zeros((iN,iN),dtype="complex128")
+        mF=ComputeF(mF,mA,mDiags,iK,iN)
+        mG=(mF-(mF.conj().T))
         dRMSG=np.sqrt((((np.real(mG)**2).sum())+((np.imag(mG)**2).sum()))\
                       /(iN*(iN-1)))
         mH=(mDiags[:,:,None]/mDiags[:,None,:]).mean(axis=0)
@@ -109,13 +111,13 @@ def ComputeLoss(mA,dLambda,dTauH=None,bLossOnly=False):
         mU=-mG/mH
         return dLoss,mDiags,dRMSG,mU
 
-def ComputeGradient(mA,mDiags):
-    (iK,iN,_)=mA.shape
-    mG=np.zeros((iN,iN),dtype="complex128")
+@njit
+def ComputeF(mF,mA,mDiags,iK,iN):
     for i in prange(iK):
-        mG+=np.dot(mA[i]/mDiags[i,:,None],mA[i].conj().T)
-    mG=(mG-(mG.conj().T))/iK
-    return mG
+        vDiags=(mDiags[i]).reshape((iN,1))
+        mF+=np.dot(mA[i]/vDiags,mA[i].conj().T)
+    mF=mF/iK
+    return mF
 
 def PerformGoldenSection(mA,mU,mB,dLambda):
     dTheta=2/(1+(5**0.5))
