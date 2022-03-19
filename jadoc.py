@@ -60,7 +60,7 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=
         raise ValueError("Starting value transformation matrix" \
                          +" has wrong shape")
     else: mB=mB0
-    mA=np.empty((iK,iN,iS),dtype='complex128')
+    mA=np.empty((iK,iN,iS),dtype="complex128")
     dLambda=dLambda0
     print("Initial regularization coefficient = "+str(dLambda))
     for i in range(iK):
@@ -111,7 +111,7 @@ def ComputeLoss(mA,dLambda,dTauH=None,bLossOnly=False):
 
 def ComputeGradient(mA,mDiags):
     (iK,iN,_)=mA.shape
-    mG=np.zeros((iN,iN),dtype='complex128')
+    mG=np.zeros((iN,iN),dtype="complex128")
     for i in prange(iK):
         mG+=np.dot(mA[i]/mDiags[i,:,None],mA[i].conj().T)
     mG=(mG-(mG.conj().T))/iK
@@ -126,7 +126,7 @@ def PerformGoldenSection(mA,mU,mB,dLambda):
     bLossOnlyGold=True
     (iK,iN,iS)=mA.shape
     mR=scipy.linalg.expm(mU)
-    mAS=np.empty((iGuesses,iK,iN,iS),dtype='complex128')
+    mAS=np.empty((iGuesses,iK,iN,iS),dtype="complex128")
     mAS[0]=mA.copy()
     mAS[1]=RotateData(mR,mA.copy())
     mAS[2]=(1-dTheta)*mAS[1]+dTheta*mAS[0]
@@ -165,51 +165,14 @@ def RotateData(mR,mData):
         mData[i]=np.dot(mR,mData[i])
     return mData
 
-def SimulateHermitian(iK,iN,iR,dAlpha):
-    print("Simulating "+str(iK)+" distinct "+str(iN)+"-by-"+str(iN) \
-          +" Hermitian matrices with alpha="+str(dAlpha)+", for run "+str(iR))
-    iMainSeed=27455131
-    iRmax=10000
-    if iR>=iRmax:
-        return
-    rngMain=np.random.default_rng(iMainSeed)
-    vSeed=rngMain.integers(0,iMainSeed,iRmax)
-    iSeed=vSeed[iR]
-    rng=np.random.default_rng(iSeed)
-    mX=rng.normal(size=(iN,iN))+1j*rng.normal(size=(iN,iN))
-    mC=np.empty((iK,iN,iN),dtype='complex128')
-    for i in range(0,iK):
-        mXk=rng.normal(size=(iN,iN))+1j*rng.normal(size=(iN,iN))
-        mXk=dAlpha*mX+(1-dAlpha)*mXk
-        mR=scipy.linalg.expm(mXk-(mXk.conj().T))
-        vD=rng.normal(size=iN)
-        mC[i]=np.dot(mR*(vD[None,:]),mR.conj().T)
-    return mC
-
-def SimulateSym(iK,iN,iR,dAlpha):
-    print("Simulating "+str(iK)+" distinct "+str(iN)+"-by-"+str(iN) \
-          +" symmetric matrices with alpha="+str(dAlpha)+", for run "+str(iR))
-    iMainSeed=54803289
-    iRmax=10000
-    if iR>=iRmax:
-        return
-    rngMain=np.random.default_rng(iMainSeed)
-    vSeed=rngMain.integers(0,iMainSeed,iRmax)
-    iSeed=vSeed[iR]
-    rng=np.random.default_rng(iSeed)
-    mX=rng.normal(size=(iN,iN))
-    mC=np.empty((iK,iN,iN))
-    for i in range(0,iK):
-        mXk=rng.normal(size=(iN,iN))
-        mXk=dAlpha*mX+(1-dAlpha)*mXk
-        mR=scipy.linalg.expm(mXk-(mXk.T))
-        vD=rng.normal(size=iN)
-        mC[i]=np.dot(mR*(vD[None,:]),mR.T)
-    return mC
-
-def SimulatePSD(iK,iN,iR,dAlpha):
-    print("Simulating "+str(iK)+" distinct "+str(iN)+"-by-"+str(iN) \
-          +" P(S)D matrices with alpha="+str(dAlpha)+", for run "+str(iR))
+def SimulateData(iK,iN,iR,dAlpha,bComplex=False,bPSD=True):
+    if bComplex: sType1="Hermitian "
+    else: sType1="real symmetric "
+    if bPSD: sType2="positive (semi)-definite "
+    else: sType2=""
+    print("Simulating "+str(iK)+" distinct "+str(iN)+"-by-"+str(iN)+" " \
+          +sType1+sType2+"matrices with alpha="+str(dAlpha) \
+              +", for run "+str(iR))
     iMainSeed=15348091
     iRmax=10000
     if iR>=iRmax:
@@ -218,14 +181,23 @@ def SimulatePSD(iK,iN,iR,dAlpha):
     vSeed=rngMain.integers(0,iMainSeed,iRmax)
     iSeed=vSeed[iR]
     rng=np.random.default_rng(iSeed)
-    mX=rng.normal(size=(iN,iN))
-    mC=np.empty((iK,iN,iN))
+    if bComplex:
+        mX=rng.normal(size=(iN,iN))+1j*rng.normal(size=(iN,iN))
+        mC=np.empty((iK,iN,iN),dtype="complex128")
+    else:
+        mX=rng.normal(size=(iN,iN))
+        mC=np.empty((iK,iN,iN))
     for i in range(0,iK):
-        mXk=rng.normal(size=(iN,iN))
+        if bComplex:
+            mXk=rng.normal(size=(iN,iN))+1j*rng.normal(size=(iN,iN))
+        else:
+            mXk=rng.normal(size=(iN,iN))
         mXk=dAlpha*mX+(1-dAlpha)*mXk
-        mR=scipy.linalg.expm(mXk-(mXk.T))
-        vD=rng.chisquare(1,size=iN)
-        mC[i]=np.dot(mR*(vD[None,:]),mR.T)
+        mR=scipy.linalg.expm(mXk-(mXk.conj().T))
+        vD=rng.normal(size=iN)
+        if bPSD:
+            vD=vD**2
+        mC[i]=np.dot(mR*(vD[None,:]),mR.conj().T)
     return mC
 
 def Test():
@@ -233,12 +205,12 @@ def Test():
     iN=100
     iR=1
     dAlpha=0.9
-    mC=SimulateHermitian(iK,iN,iR,dAlpha)
+    mC=SimulateData(iK,iN,iR,dAlpha)
     dTimeStart=time.time()
     mB=PerformJADOC(mC)
     dTime=time.time()-dTimeStart
     print("Runtime: "+str(round(dTime,3))+" seconds")
-    mD=np.empty((iK,iN,iN),dtype='complex128')
+    mD=np.empty((iK,iN,iN),dtype="complex128")
     for i in range(iK):
         mD[i]=np.dot(np.dot(mB,mC[i]),mB.conj().T)
     dSS_C=0
