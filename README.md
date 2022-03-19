@@ -1,6 +1,6 @@
 # JADOC (Joint Approximate Diagonalization under Orthogonality Constraints) `beta v0.1`
 
-`jadoc` is a Python 3.x package for joint approximate diagonalization of multiple positive (semi)-definite matrices under orthogonality constraints.
+`jadoc` is a Python 3.x package for joint approximate diagonalization of multiple Hermitian matrices under orthogonality constraints.
 
 ## Installation
 
@@ -37,33 +37,35 @@ python -c "import jadoc; jadoc.Test()"
 
 This command should yield output along the following lines:
 ```
-Simulating 10 distinct 100-by-100 P(S)D matrices with alpha=0.9, for run 1
+Simulating 10 distinct 100-by-100 real symmetric positive (semi)-definite matrices with alpha=0.9, for run 1
 Starting JADOC
 Computing low-dimensional decomposition of input matrices
 Initial regularization coefficient = 1
-Final regularization coefficient = 1.580194019438573
+Final regularization coefficient = 1.5534757982624383
 Starting quasi-Newton algorithm with line search (golden section)
-ITER 0: L=34.74, RMSD(g)=0.003092, step=0.618
-ITER 1: L=34.243, RMSD(g)=0.006551, step=0.629
-ITER 2: L=33.008, RMSD(g)=0.008855, step=0.659
-ITER 3: L=31.86, RMSD(g)=0.007825, step=0.71
-ITER 4: L=31.057, RMSD(g)=0.005775, step=0.758
-ITER 5: L=30.577, RMSD(g)=0.003688, step=0.772
-ITER 6: L=30.345, RMSD(g)=0.0023, step=0.822
-ITER 7: L=30.259, RMSD(g)=0.001238, step=0.872
-ITER 8: L=30.234, RMSD(g)=0.000667, step=0.804
-ITER 9: L=30.227, RMSD(g)=0.000398, step=0.73
-ITER 10: L=30.224, RMSD(g)=0.000261, step=0.71
-ITER 11: L=30.222, RMSD(g)=0.000181, step=0.713
-ITER 12: L=30.221, RMSD(g)=0.000132, step=0.716
-ITER 13: L=30.221, RMSD(g)=0.000101, step=0.715
+ITER 0: L=34.406, RMSD(g)=0.003741, step=0.619
+ITER 1: L=33.979, RMSD(g)=0.006683, step=0.626
+ITER 2: L=32.881, RMSD(g)=0.009634, step=0.648
+ITER 3: L=31.634, RMSD(g)=0.009106, step=0.665
+ITER 4: L=30.806, RMSD(g)=0.007202, step=0.679
+ITER 5: L=30.292, RMSD(g)=0.00614, step=0.71
+ITER 6: L=29.886, RMSD(g)=0.004879, step=0.757
+ITER 7: L=29.617, RMSD(g)=0.002679, step=0.708
+ITER 8: L=29.522, RMSD(g)=0.001497, step=0.822
+ITER 9: L=29.495, RMSD(g)=0.000768, step=0.754
+ITER 10: L=29.487, RMSD(g)=0.00046, step=0.782
+ITER 11: L=29.484, RMSD(g)=0.000281, step=0.752
+ITER 12: L=29.482, RMSD(g)=0.000183, step=0.727
+ITER 13: L=29.481, RMSD(g)=0.000127, step=0.714
 Returning transformation matrix B
-Runtime: 0.846 seconds
-Root-mean-square deviation off-diagonals before transformation: 0.13898
-Root-mean-square deviation off-diagonals after transformation: 0.07789
+Runtime: 1.812 seconds
+Root-mean-square deviation off-diagonals before transformation: 0.149363
+Root-mean-square deviation off-diagonals after transformation: 0.075868
 ```
 
-This output shows 10 positive (semi)-definite 100-by-100 matrices were generated, denoted by **C**<sub>1</sub>, ..., **C**<sub>10</sub>, after which JADOC calculated a matrix **B** such that **BC**<sub>*k*</sub>**B**<sup>T</sup> is as diagonal as possible for *k* = 1, ..., 10. Runtime is printed together with the root-mean-square deviation of the off-diagonal elements of **C**<sub>*k*</sub> and **BC**<sub>*k*</sub>**B**<sup>T</sup>.
+This output shows 10 positive (semi)-definite 100-by-100 matrices were generated, denoted by **C**<sub>1</sub>, ..., **C**<sub>10</sub>, after which JADOC calculated a matrix **B** such that **BC**<sub>*k*</sub>**B**<sup>\*</sup> is as diagonal as possible for *k* = 1, ..., 10, where **B**<sup>\*</sup> denotes conjugate transpose of **B**, which simply equals the transpose of **B** in this case, because **B** is a real matrix, as **C**<sub>*k*</sub> are real matrices.
+
+Runtime is printed together with the root-mean-square deviation of the off-diagonal elements of **C**<sub>*k*</sub> and **BC**<sub>*k*</sub>**B**<sup>\*</sup>.
 
 ## Tutorial
 
