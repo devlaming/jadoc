@@ -3,7 +3,8 @@ import numpy as np
 import time
 from numba import njit,prange
 
-def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=None):
+def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,\
+                 iS=None):
     """Joint Approximate Diagonalization under Orthogonality Constraints
     (JADOC)
     
@@ -60,10 +61,20 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=
         raise ValueError("Starting value transformation matrix" \
                          +" has wrong shape")
     else: mB=mB0
-    mA=np.empty((iK,iN,iS),dtype="complex128")
+    bComplex=np.iscomplexobj(mC)
+    if bComplex: mA=np.empty((iK,iN,iS),dtype="complex128")
+    else: mA=np.empty((iK,iN,iS))
     dLambda=dLambda0
     print("Initial regularization coefficient = "+str(dLambda))
     for i in range(iK):
+        mD=mC[i]-ConjT(mC[i])
+        if bComplex: dMSD=(np.real(mD)**2).mean()+(np.imag(mD)**2).mean()
+        else: dMSD=(mD**2).mean()
+        if dMSD>np.finfo(float).eps:
+            if bComplex:
+                raise ValueError("Input matrices are not Hermitian")
+            else:
+                raise ValueError("Input matrices are not real symmetric")
         (vD,mP)=np.linalg.eigh(mC[i])
         vD=abs(vD)
         dSD1=vD.sum()
@@ -79,11 +90,11 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=
     print("Starting quasi-Newton algorithm with line search (golden section)")
     bConverged=False
     for t in range(iT):
-        (dLoss,mDiags,dRMSG,mU)=ComputeLoss(mA,dLambda,dTauH)
+        (dLoss,mDiags,dRMSG,mU)=ComputeLoss(mA,dLambda,bComplex,dTauH)
         if dRMSG<dTol and t>=iTmin:
             bConverged=True
             break
-        dStepSize=PerformGoldenSection(mA,mU,mB,dLambda)
+        dStepSize=PerformGoldenSection(mA,mU,mB,dLambda,bComplex)
         print("ITER "+str(t)+": L="+str(round(dLoss,3))+", RMSD(g)=" \
               +str(round(dRMSG,6))+", step="+str(round(dStepSize,3)))
         (mB,mA)=UpdateEstimates(mA,mU,mB,dStepSize)
@@ -92,19 +103,29 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,iS=
     print("Returning transformation matrix B")
     return mB
 
-def ComputeLoss(mA,dLambda,dTauH=None,bLossOnly=False):
-    mDiags=((np.real(mA)**2).sum(axis=2))+((np.imag(mA)**2).sum(axis=2))\
-        +dLambda
+def ComputeLoss(mA,dLambda,bComplex,dTauH=None,bLossOnly=False):
+    if bComplex:
+        mDiags=((np.real(mA)**2).sum(axis=2))+((np.imag(mA)**2).sum(axis=2))\
+            +dLambda
+    else:
+        mDiags=((mA**2).sum(axis=2))+dLambda
     (iK,iN,iS)=mA.shape
     dLoss=0.5*(np.log(mDiags).sum())/iK
     if bLossOnly:
         return dLoss
     else:
-        mF=np.zeros((iN,iN),dtype="complex128")
-        mF=ComputeF(mF,mA,mDiags,iK,iN)
-        mG=(mF-(mF.conj().T))
-        dRMSG=np.sqrt((((np.real(mG)**2).sum())+((np.imag(mG)**2).sum()))\
-                      /(iN*(iN-1)))
+        if bComplex:
+            mF=np.zeros((iN,iN),dtype="complex128")
+            mF=ComputeFComplex(mF,mA,mDiags,iK,iN)
+        else:
+            mF=np.zeros((iN,iN))
+            mF=ComputeFReal(mF,mA,mDiags,iK,iN)
+        mG=(mF-ConjT(mF))
+        if bComplex:
+            dRMSG=np.sqrt((((np.real(mG)**2).sum())+((np.imag(mG)**2).sum()))\
+                          /(iN*(iN-1)))
+        else:
+            dRMSG=np.sqrt(((mG**2).sum())/(iN*(iN-1)))
         mH=(mDiags[:,:,None]/mDiags[:,None,:]).mean(axis=0)
         mH=mH+mH.T-2.0
         mH[mH<dTauH]=dTauH
@@ -112,14 +133,22 @@ def ComputeLoss(mA,dLambda,dTauH=None,bLossOnly=False):
         return dLoss,mDiags,dRMSG,mU
 
 @njit
-def ComputeF(mF,mA,mDiags,iK,iN):
+def ComputeFComplex(mF,mA,mDiags,iK,iN):
     for i in prange(iK):
         vDiags=(mDiags[i]).reshape((iN,1))
         mF+=np.dot(mA[i]/vDiags,mA[i].conj().T)
     mF=mF/iK
     return mF
 
-def PerformGoldenSection(mA,mU,mB,dLambda):
+@njit
+def ComputeFReal(mF,mA,mDiags,iK,iN):
+    for i in prange(iK):
+        vDiags=(mDiags[i]).reshape((iN,1))
+        mF+=np.dot(mA[i]/vDiags,mA[i].T)
+    mF=mF/iK
+    return mF
+
+def PerformGoldenSection(mA,mU,mB,dLambda,bComplex):
     dTheta=2/(1+(5**0.5))
     iIter=0
     iMaxIter=15
@@ -128,14 +157,15 @@ def PerformGoldenSection(mA,mU,mB,dLambda):
     bLossOnlyGold=True
     (iK,iN,iS)=mA.shape
     mR=scipy.linalg.expm(mU)
-    mAS=np.empty((iGuesses,iK,iN,iS),dtype="complex128")
+    if bComplex: mAS=np.empty((iGuesses,iK,iN,iS),dtype="complex128")
+    else: mAS=np.empty((iGuesses,iK,iN,iS))
     mAS[0]=mA.copy()
     mAS[1]=RotateData(mR,mA.copy())
     mAS[2]=(1-dTheta)*mAS[1]+dTheta*mAS[0]
     mAS[3]=(1-dTheta)*mAS[0]+dTheta*mAS[1]
     (mA,mR)=(None,None)
-    dLoss2=ComputeLoss(mAS[2],dLambda,bLossOnly=bLossOnlyGold)
-    dLoss3=ComputeLoss(mAS[3],dLambda,bLossOnly=bLossOnlyGold)
+    dLoss2=ComputeLoss(mAS[2],dLambda,bComplex,bLossOnly=bLossOnlyGold)
+    dLoss3=ComputeLoss(mAS[3],dLambda,bComplex,bLossOnly=bLossOnlyGold)
     while iIter<iMaxIter:
         if (dLoss2<dLoss3):
             mAS[1]=mAS[3]
@@ -143,14 +173,14 @@ def PerformGoldenSection(mA,mU,mB,dLambda):
             dLoss3=dLoss2
             dStepUB=dStepLB+dTheta*(dStepUB-dStepLB)
             mAS[2]=mAS[1]-dTheta*(mAS[1]-mAS[0])
-            dLoss2=ComputeLoss(mAS[2],dLambda,bLossOnly=bLossOnlyGold)
+            dLoss2=ComputeLoss(mAS[2],dLambda,bComplex,bLossOnly=bLossOnlyGold)
         else:
             mAS[0]=mAS[2]
             mAS[2]=mAS[3]
             dLoss2=dLoss3
             dStepLB=dStepUB-dTheta*(dStepUB-dStepLB)
             mAS[3]=mAS[0]+dTheta*(mAS[1]-mAS[0])
-            dLoss3=ComputeLoss(mAS[3],dLambda,bLossOnly=bLossOnlyGold)
+            dLoss3=ComputeLoss(mAS[3],dLambda,bComplex,bLossOnly=bLossOnlyGold)
         iIter+=1
     return np.log(1+(dStepLB*(np.exp(1)-1)))
 
@@ -166,6 +196,12 @@ def RotateData(mR,mData):
     for i in prange(iK):
         mData[i]=np.dot(mR,mData[i])
     return mData
+
+def ConjT(mA):
+    if np.iscomplexobj(mA):
+        return mA.conj().T
+    else:
+        return mA.T
 
 def SimulateData(iK,iN,iR,dAlpha,bComplex=False,bPSD=True):
     if bComplex: sType1="Hermitian "
@@ -195,11 +231,11 @@ def SimulateData(iK,iN,iR,dAlpha,bComplex=False,bPSD=True):
         else:
             mXk=rng.normal(size=(iN,iN))
         mXk=dAlpha*mX+(1-dAlpha)*mXk
-        mR=scipy.linalg.expm(mXk-(mXk.conj().T))
+        mR=scipy.linalg.expm(mXk-ConjT(mXk))
         vD=rng.normal(size=iN)
         if bPSD:
             vD=vD**2
-        mC[i]=np.dot(mR*(vD[None,:]),mR.conj().T)
+        mC[i]=np.dot(mR*(vD[None,:]),ConjT(mR))
     return mC
 
 def Test():
@@ -212,16 +248,16 @@ def Test():
     mB=PerformJADOC(mC)
     dTime=time.time()-dTimeStart
     print("Runtime: "+str(round(dTime,3))+" seconds")
-    mD=np.empty((iK,iN,iN),dtype="complex128")
+    mD=np.empty((iK,iN,iN))
     for i in range(iK):
-        mD[i]=np.dot(np.dot(mB,mC[i]),mB.conj().T)
+        mD[i]=np.dot(np.dot(mB,mC[i]),mB.T)
     dSS_C=0
     dSS_D=0
     for i in range(iK):
         mOffPre=mC[i]-np.diag(np.diag(mC[i]))
         mOffPost=mD[i]-np.diag(np.diag(mD[i]))
-        dSS_C+=(np.real(mOffPre)**2).sum()+(np.imag(mOffPre)**2).sum()
-        dSS_D+=(np.real(mOffPost)**2).sum()+(np.imag(mOffPost)**2).sum()
+        dSS_C+=(mOffPre**2).sum()
+        dSS_D+=(mOffPost**2).sum()
     dRMS_C=np.sqrt(dSS_C/(iN*(iN-1)*iK))
     dRMS_D=np.sqrt(dSS_D/(iN*(iN-1)*iK))
     print("Root-mean-square deviation off-diagonals before transformation: " \
