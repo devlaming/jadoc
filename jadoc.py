@@ -1,9 +1,10 @@
 import scipy.linalg
+from scipy.sparse import linalg
 import numpy as np
 import time
 from numba import njit,prange
 
-def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,\
+def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dAlpha=0.9,\
                  iS=None):
     """Joint Approximate Diagonalization under Orthogonality Constraints
     (JADOC)
@@ -32,8 +33,8 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,\
     dTauH : float, optional
         minimum value of second-order derivatives; default=1E-2
     
-    dLambda0 : float, optional
-        regularization coefficient; default=1
+    dAlpha : float, optional
+        regularization strength between zero and one; default=0.9
     
     iS : int, optional
         replace mC[i] by rank-iS approximation; default=None
@@ -55,7 +56,7 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,\
     elif iS>iN:
         raise ValueError("Desired rank (iS) exceeds dimensionality" \
                          +" of input matrices (iN)")
-    else: print("Computing low-dimensional decomposition of input matrices")
+    else: print("Computing low-dimensional approximation of input matrices")
     if mB0 is None: mB=np.eye(iN)
     elif mB0.shape!=(iN,iN):
         raise ValueError("Starting value transformation matrix" \
@@ -64,8 +65,8 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,\
     bComplex=np.iscomplexobj(mC)
     if bComplex: mA=np.empty((iK,iN,iS),dtype="complex128")
     else: mA=np.empty((iK,iN,iS))
-    dLambda=dLambda0
-    print("Initial regularization coefficient = "+str(dLambda))
+    print("Regularization strength = "+str(dAlpha))
+    vAlphaLambda=np.empty(iK)
     for i in range(iK):
         mD=mC[i]-ConjT(mC[i])
         if bComplex: dMSD=(np.real(mD)**2).mean()+(np.imag(mD)**2).mean()
@@ -75,26 +76,23 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,\
                 raise ValueError("Input matrices are not Hermitian")
             else:
                 raise ValueError("Input matrices are not real symmetric")
-        (vD,mP)=np.linalg.eigh(mC[i])
+        if iS<iN:
+            (vD,mP)=linalg.eigsh(mC[i],k=iS)
+        else:
+            (vD,mP)=np.linalg.eigh(mC[i])
         vD=abs(vD)
-        dSD1=vD.sum()
-        vLeadEVs=((vD.argsort().argsort())>=iN-iS)
-        vD=vD[vLeadEVs]
-        dSD2=vD.sum()
-        mP=mP[:,vLeadEVs]
-        dLambda+=((dSD1-dSD2)/(iN*iK))
-        mA[i]=mP*(np.sqrt(vD)[None,:])
+        vAlphaLambda[i]=dAlpha*((vD.sum())/iN)
+        mA[i]=((1-dAlpha)**0.5)*mP*(np.sqrt(vD)[None,:])
         if mB0 is not None: mA[i]=np.dot(mB,mA[i])
-    print("Final regularization coefficient = "+str(dLambda))
     (mP,vD,mC)=(None,None,None)
     print("Starting quasi-Newton algorithm with line search (golden section)")
     bConverged=False
     for t in range(iT):
-        (dLoss,mDiags,dRMSG,mU)=ComputeLoss(mA,dLambda,bComplex,dTauH)
+        (dLoss,mDiags,dRMSG,mU)=ComputeLoss(mA,vAlphaLambda,bComplex,dTauH)
         if dRMSG<dTol and t>=iTmin:
             bConverged=True
             break
-        dStepSize=PerformGoldenSection(mA,mU,mB,dLambda,bComplex)
+        dStepSize=PerformGoldenSection(mA,mU,mB,vAlphaLambda,bComplex)
         print("ITER "+str(t)+": L="+str(round(dLoss,3))+", RMSD(g)=" \
               +str(round(dRMSG,6))+", step="+str(round(dStepSize,3)))
         (mB,mA)=UpdateEstimates(mA,mU,mB,dStepSize)
@@ -103,12 +101,12 @@ def PerformJADOC(mC,mB0=None,iT=100,iTmin=10,dTol=1E-4,dTauH=1E-2,dLambda0=1,\
     print("Returning transformation matrix B")
     return mB
 
-def ComputeLoss(mA,dLambda,bComplex,dTauH=None,bLossOnly=False):
+def ComputeLoss(mA,vAlphaLambda,bComplex,dTauH=None,bLossOnly=False):
     if bComplex:
         mDiags=((np.real(mA)**2).sum(axis=2))+((np.imag(mA)**2).sum(axis=2))\
-            +dLambda
+            +vAlphaLambda[:,None]
     else:
-        mDiags=((mA**2).sum(axis=2))+dLambda
+        mDiags=((mA**2).sum(axis=2))+vAlphaLambda[:,None]
     (iK,iN,iS)=mA.shape
     dLoss=0.5*(np.log(mDiags).sum())/iK
     if bLossOnly:
@@ -148,7 +146,7 @@ def ComputeFReal(mF,mA,mDiags,iK,iN):
     mF=mF/iK
     return mF
 
-def PerformGoldenSection(mA,mU,mB,dLambda,bComplex):
+def PerformGoldenSection(mA,mU,mB,vAlphaLambda,bComplex):
     dTheta=2/(1+(5**0.5))
     iIter=0
     iMaxIter=15
@@ -164,8 +162,8 @@ def PerformGoldenSection(mA,mU,mB,dLambda,bComplex):
     mAS[2]=(1-dTheta)*mAS[1]+dTheta*mAS[0]
     mAS[3]=(1-dTheta)*mAS[0]+dTheta*mAS[1]
     (mA,mR)=(None,None)
-    dLoss2=ComputeLoss(mAS[2],dLambda,bComplex,bLossOnly=bLossOnlyGold)
-    dLoss3=ComputeLoss(mAS[3],dLambda,bComplex,bLossOnly=bLossOnlyGold)
+    dLoss2=ComputeLoss(mAS[2],vAlphaLambda,bComplex,bLossOnly=bLossOnlyGold)
+    dLoss3=ComputeLoss(mAS[3],vAlphaLambda,bComplex,bLossOnly=bLossOnlyGold)
     while iIter<iMaxIter:
         if (dLoss2<dLoss3):
             mAS[1]=mAS[3]
@@ -173,14 +171,16 @@ def PerformGoldenSection(mA,mU,mB,dLambda,bComplex):
             dLoss3=dLoss2
             dStepUB=dStepLB+dTheta*(dStepUB-dStepLB)
             mAS[2]=mAS[1]-dTheta*(mAS[1]-mAS[0])
-            dLoss2=ComputeLoss(mAS[2],dLambda,bComplex,bLossOnly=bLossOnlyGold)
+            dLoss2=ComputeLoss(mAS[2],vAlphaLambda,bComplex,\
+                               bLossOnly=bLossOnlyGold)
         else:
             mAS[0]=mAS[2]
             mAS[2]=mAS[3]
             dLoss2=dLoss3
             dStepLB=dStepUB-dTheta*(dStepUB-dStepLB)
             mAS[3]=mAS[0]+dTheta*(mAS[1]-mAS[0])
-            dLoss3=ComputeLoss(mAS[3],dLambda,bComplex,bLossOnly=bLossOnlyGold)
+            dLoss3=ComputeLoss(mAS[3],vAlphaLambda,bComplex,\
+                               bLossOnly=bLossOnlyGold)
         iIter+=1
     return np.log(1+(dStepLB*(np.exp(1)-1)))
 
@@ -239,13 +239,13 @@ def SimulateData(iK,iN,iR,dAlpha,bComplex=False,bPSD=True):
     return mC
 
 def Test():
-    iK=10
-    iN=100
+    iK=5
+    iN=500
     iR=1
     dAlpha=0.9
     mC=SimulateData(iK,iN,iR,dAlpha)
     dTimeStart=time.time()
-    mB=PerformJADOC(mC)
+    mB=PerformJADOC(mC,dAlpha=.95,dTol=1E-5,iT=1000)
     dTime=time.time()-dTimeStart
     print("Runtime: "+str(round(dTime,3))+" seconds")
     mD=np.empty((iK,iN,iN))
